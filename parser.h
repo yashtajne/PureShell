@@ -2,6 +2,7 @@
 #define SHELL_PARSER_H
 
 #include "Pure.h"
+#include "Core/String.h"
 
 typedef enum
 {
@@ -9,6 +10,7 @@ typedef enum
 	CMD_EXIT,
 	CMD_CLEAN,
 	CMD_CLEAR,
+	CMD_CD,
 	CMD_UNKNOWN
 }
 Command;
@@ -16,7 +18,9 @@ Command;
 typedef struct
 {
 	Command type;
-	boolean has_args;
+	simplestring_t text; /* trimmed input line (views the input) */
+	simplestring_t arg;  /* first argument, empty when none */
+	uint64_t arg_count;  /* number of arguments after the command */
 }
 ParsedCommand;
 

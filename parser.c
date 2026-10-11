@@ -2,16 +2,20 @@
 #include "Core/Char.h"
 #include "Core/Charseq.h"
 
-/* Parse a single input line into a builtin command.
- * Does not modify the input. Trims leading/trailing whitespace,
- * matches the first word against exit/clean/clear, and reports
- * whether trailing arguments were present (builtins take none). */
+/* Parse a single input line into a builtin command plus arguments.
+ * Trims the input in place. `text` views the trimmed line (for launching
+ * programs verbatim); `arg` views the first argument and `arg_count`
+ * is the total number of arguments after the command word. */
 ParsedCommand
 parse(charseq_t line)
 {
 	ParsedCommand out;
 	out.type = CMD_UNKNOWN;
-	out.has_args = false;
+	out.text.charseq = NULL;
+	out.text.size = 0;
+	out.arg.charseq = NULL;
+	out.arg.size = 0;
+	out.arg_count = 0;
 
 	if ( !line )
 	{
@@ -19,9 +23,8 @@ parse(charseq_t line)
 		return out;
 	}
 
-	/* skip leading whitespace */
-	while ( isspace(*line) )
-		line++;
+	charseq_trimleft(line);
+	charseq_trimright(line);
 
 	if ( *line == '\0' )
 	{
@@ -29,8 +32,11 @@ parse(charseq_t line)
 		return out;
 	}
 
+	out.text.charseq = line;
+	out.text.size = charseq_countbytes(line);
+
 	/* isolate first word */
-	const char* end = line;
+	char* end = line;
 	while ( *end && !isspace(*end) )
 		end++;
 
@@ -51,13 +57,32 @@ parse(charseq_t line)
 		out.type = CMD_CLEAN;
 	else if ( charseq_isequals(word, "clear") )
 		out.type = CMD_CLEAR;
+	else if ( charseq_isequals(word, "cd") )
+		out.type = CMD_CD;
 	else
 		return out;
 
-	/* anything past the first word (besides whitespace) is args */
-	while ( isspace(*end) )
-		end++;
+	/* tokenize the arguments */
+	char* p = end;
+	for ( ;; )
+	{
+		while ( isspace(*p) )
+			p++;
 
-	out.has_args = (*end != '\0');
+		if ( *p == '\0' )
+			break;
+
+		char* a = p;
+		while ( *p && !isspace(*p) )
+			p++;
+
+		if ( out.arg_count == 0 )
+		{
+			out.arg.charseq = a;
+			out.arg.size = (uint64_t)(p - a);
+		}
+		out.arg_count++;
+	}
+
 	return out;
 }
