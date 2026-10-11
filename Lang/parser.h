@@ -25,5 +25,6 @@ typedef struct
 ParsedCommand;
 
 ParsedCommand parse(charseq_t line);
+ParsedCommand parse_segment(charseq_t* cursor);
 
 #endif // SHELL_PARSER_H

@@ -1,5 +1,4 @@
-#include "handle.h"
-#include "builtin.h"
+#include "Shell.h"
 #include "Pure.h"
 #include "Std/IO.h"
 #include "Std/Self.h"
@@ -62,8 +61,8 @@ do_cd(ParsedCommand cmd)
 void
 do_launch(ParsedCommand cmd)
 {
-	uint64_t namelen;
 	char saved;
+	uint64_t namelen;
 	process_t* process;
 
 	if ( cmd.text.size >= sizeof(scratch) )
@@ -72,7 +71,7 @@ do_launch(ParsedCommand cmd)
 		return;
 	}
 
-	if ( memory_copy(cmd.text.charseq, scratch, cmd.text.size) != PURE_OK )
+	if ( memory_copy( cmd.text.charseq, scratch, cmd.text.size ) != PURE_OK )
 	{
 		_write((byte_t*)cstr("cannot execute command\n"));
 		return;

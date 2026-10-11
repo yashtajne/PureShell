@@ -2,12 +2,12 @@
 #include "Core/Char.h"
 #include "Core/Charseq.h"
 
-/* Parse a single input line into a builtin command plus arguments.
- * Trims the input in place. `text` views the trimmed line (for launching
+/* Parse a single command (no `;` handling).
+ * Trims the input in place. `text` views the trimmed command (for launching
  * programs verbatim); `arg` views the first argument and `arg_count`
  * is the total number of arguments after the command word. */
-ParsedCommand
-parse(charseq_t line)
+static ParsedCommand
+parse_single(charseq_t line)
 {
 	ParsedCommand out;
 	out.type = CMD_UNKNOWN;
@@ -85,4 +85,56 @@ parse(charseq_t line)
 	}
 
 	return out;
+}
+
+/* Parse the next `;`-separated command and advance past it.
+ * Empty segments are skipped. Always advances `cursor`, so
+ * `while (*cursor) handle_command(parse_segment(&cursor))`
+ * terminates. */
+ParsedCommand
+parse_segment(charseq_t* cursor)
+{
+	ParsedCommand out;
+	out.type = CMD_EMPTY;
+	out.text.charseq = NULL;
+	out.text.size = 0;
+	out.arg.charseq = NULL;
+	out.arg.size = 0;
+	out.arg_count = 0;
+
+	if ( !cursor || !*cursor )
+		return out;
+
+	charseq_t p = *cursor;
+	while ( *p == ';' || isspace(*p) )
+		p++;
+
+	if ( *p == '\0' )
+	{
+		*cursor = p;
+		return out;
+	}
+
+	charseq_t end = p;
+	while ( *end != '\0' && *end != ';' )
+		end++;
+
+	if ( *end == ';' )
+	{
+		*end = '\0';
+		*cursor = end + 1;
+	}
+	else
+	{
+		*cursor = end;
+	}
+
+	return parse_single(p);
+}
+
+/* Parse the first command of a line. */
+ParsedCommand
+parse(charseq_t line)
+{
+	return parse_segment(&line);
 }

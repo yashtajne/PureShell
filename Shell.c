@@ -2,8 +2,7 @@
 #include "Std/IO.h"
 #include "Std/Self.h"
 
-#include "parser.h"
-#include "handle.h"
+#include "Shell.h"
 
 #define INPUT_BUFFER_SIZE 4096
 
@@ -33,7 +32,9 @@ main(void)
 				exit(0);
 		}
 
-		handle_command(parse((charseq_t)input));
+		charseq_t cursor = (charseq_t)input;
+		while ( *cursor != '\0' )
+			handle_command(parse_segment(&cursor));
 	}
 
 	return 0;
